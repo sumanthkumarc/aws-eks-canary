@@ -1,0 +1,43 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: traffic-split
+  annotations:
+    alb.ingress.kubernetes.io/group.name: traffic-split
+    alb.ingress.kubernetes.io/load-balancer-name: traffic-split
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/scheme: internal
+    alb.ingress.kubernetes.io/security-groups: sg-1234567abcdef
+    alb.ingress.kubernetes.io/actions.weighted-routing: |
+      {
+          "type": "forward",
+          "forwardConfig": {
+              "targetGroups": [
+                  {
+                      "serviceName": "ng",
+                      "servicePort": 80,
+                      "weight": 50
+                  },
+                  {
+                      "serviceName": "ng-canary",
+                      "servicePort": 80,
+                      "weight": 50
+                  }
+              ],
+              "targetGroupStickinessConfig": {
+                  "enabled": false
+              }
+          }
+      }
+spec:
+  ingressClassName: alb
+  rules:
+    - http:
+        paths:
+          - backend:
+              service:
+                name: weighted-routing
+                port: 
+                  name: use-annotation
+            pathType: ImplementationSpecific
